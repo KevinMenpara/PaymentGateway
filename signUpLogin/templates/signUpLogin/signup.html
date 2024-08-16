@@ -1,3 +1,4 @@
+<!-- templates/signup.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -19,11 +20,14 @@
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            width: 300px;
+            width: 100%;
+            max-width: 400px;
             position: relative;
         }
         .container h2 {
             margin-top: 0;
+            font-size: 24px;
+            color: #333;
         }
         .form-group {
             margin-bottom: 15px;
@@ -31,10 +35,13 @@
         .form-group label {
             display: block;
             margin-bottom: 5px;
+            color: #555;
         }
-        .form-group input {
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
             width: 100%;
-            padding: 8px;
+            padding: 10px;
             box-sizing: border-box;
             border: 1px solid #ddd;
             border-radius: 4px;
@@ -48,6 +55,17 @@
         }
         .form-group input[type="submit"]:hover {
             background-color: #218838;
+        }
+        .form-group p {
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        .form-group a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .form-group a:hover {
+            text-decoration: underline;
         }
         .error-popup {
             display: none;
@@ -77,19 +95,31 @@
 <body>
     <div class="container">
         <h2>Signup</h2>
-        <form id="signupForm" method="post" action="/signup/">
+        <form id="signupForm" method="post">
             {% csrf_token %}
             <div class="form-group">
-                <label for="name">Name:</label>
-                <input type="text" id="name" name="name" required>
+                {{ form.name.label_tag }}
+                {{ form.name }}
             </div>
             <div class="form-group">
-                <label for="email">Email:</label>
-                <input type="email" id="email" name="email" required>
+                {{ form.email.label_tag }}
+                {{ form.email }}
             </div>
             <div class="form-group">
-                <label for="password">Password:</label>
-                <input type="password" id="password" name="password" required>
+                {{ form.password.label_tag }}
+                {{ form.password }}
+            </div>
+            <div class="form-group">
+                {{ form.dob.label_tag }}
+                {{ form.dob }}
+            </div>
+            <div class="form-group">
+                {{ form.expiry.label_tag }}
+                {{ form.expiry }}
+            </div>
+            <div class="form-group">
+                {{ form.ammount.label_tag }}
+                {{ form.ammount }}
             </div>
             <div class="form-group">
                 <input type="submit" value="Sign Up">
@@ -115,23 +145,25 @@
                 }
             }).then(response => response.json()).then(data => {
                 if (data.error) {
-                    showErrorPopup(data.error);
-                } else {
+                    // Check if the error is an object or a string
+                    const errorMessage = typeof data.error === 'string' ? data.error : 'An unexpected error occurred.';
+                    showErrorPopup(errorMessage);
+                } else if (data.success) {
                     window.location.href = '/thankyou'; // Redirect on successful signup
                 }
             }).catch(error => {
                 showErrorPopup('An unexpected error occurred.');
             });
         });
-
+    
         function showErrorPopup(message) {
             document.getElementById('errorMessage').textContent = message;
             document.getElementById('errorPopup').style.display = 'block';
         }
-
+    
         function closePopup() {
             document.getElementById('errorPopup').style.display = 'none';
         }
-    </script>
+    </script>    
 </body>
 </html>

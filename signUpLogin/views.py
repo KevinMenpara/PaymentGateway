@@ -5,27 +5,24 @@ from django.urls import reverse
 from django.template import loader
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import authenticate, login as auth_login
+from signUpLogin.forms import UserSignupForm
 # Create your views here.
 
-class SignupForm(forms.Form):
-    name = forms.CharField(max_length=100)
-    email = forms.EmailField()
-    password = forms.CharField(widget=forms.PasswordInput)
-
-@csrf_exempt
 def signUp(request):
     if request.method == 'POST':
-        form = SignupForm(request.POST)
+        form = UserSignupForm(request.POST)
         if form.is_valid():
-            # Process form data (e.g., save user)
-            return JsonResponse({'success': True})
+            try:
+                form.save()
+                return JsonResponse({'success': True})
+            except Exception as e:
+                return JsonResponse({'error': str(e)}, status=500)
         else:
-            # Return errors as JSON
             errors = form.errors.as_json()
             return JsonResponse({'error': errors}, status=400)
     else:
-        form = SignupForm()
-        return render(request, 'signUpLogin/signUp.html', {'form': form})    
+        form = UserSignupForm()
+    return render(request, 'signUpLogin/signUp.html', {'form': form})  
 
 class LoginForm(forms.Form):
     email = forms.EmailField()
@@ -50,6 +47,8 @@ def login(request):
     else:
         form = LoginForm()
         return render(request, 'signUpLogin/login.html', {'form': form})
+    
+
 def thankyou(request):
     try:
         # thankyou_template = loader.get_template("signUpLogin/thankYou.html")
