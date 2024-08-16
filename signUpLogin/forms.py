@@ -1,4 +1,3 @@
-# forms.py
 from django import forms
 from .models import User
 from django.core.exceptions import ValidationError
@@ -14,7 +13,7 @@ class UserSignupForm(forms.ModelForm):
             'expiry': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter your name'}),
             'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Enter your email'}),
-            'ammount': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Enter the ammount'}),
+            'ammount': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Enter the amount'}),
         }
 
     def clean_dob(self):
@@ -29,7 +28,7 @@ class UserSignupForm(forms.ModelForm):
             raise ValidationError("Expiry date cannot be before today.")
         return expiry
 
-    def clean_amount(self):
+    def clean_ammount(self):
         amount = self.cleaned_data.get('ammount')
         if amount < 0 or amount > 1_000_000_000:
             raise ValidationError("Amount must be between 0 and 1 billion.")
@@ -41,3 +40,7 @@ class UserSignupForm(forms.ModelForm):
         if commit:
             user.save()
         return user
+
+class UserLoginForm(forms.Form):
+    email = forms.EmailField(widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Enter your email'}))
+    password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Enter your password'}))
