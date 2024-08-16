@@ -20,6 +20,7 @@
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
             width: 300px;
+            position: relative;
         }
         .container h2 {
             margin-top: 0;
@@ -48,12 +49,36 @@
         .form-group input[type="submit"]:hover {
             background-color: #218838;
         }
+        .error-popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            border-radius: 4px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        .error-popup button {
+            background: #721c24;
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>Signup</h2>
-        <form action="/submit-signup" method="post">
+        <form id="signupForm" method="post" action="/signup/">
+            {% csrf_token %}
             <div class="form-group">
                 <label for="name">Name:</label>
                 <input type="text" id="name" name="name" required>
@@ -70,9 +95,43 @@
                 <input type="submit" value="Sign Up">
             </div>
             <div class="form-group">
-                <p>Already have a account? <a href="{% url "login" %}">Login</a></p>
+                <p>Already have an account? <a href="{% url 'login' %}">Login</a></p>
             </div>
         </form>
     </div>
+    <div id="errorPopup" class="error-popup">
+        <p id="errorMessage">Error message here</p>
+        <button onclick="closePopup()">Close</button>
+    </div>
+    <script>
+        document.getElementById('signupForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const formData = new FormData(this);
+            fetch('/signup/', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            }).then(response => response.json()).then(data => {
+                if (data.error) {
+                    showErrorPopup(data.error);
+                } else {
+                    window.location.href = '/thankyou'; // Redirect on successful signup
+                }
+            }).catch(error => {
+                showErrorPopup('An unexpected error occurred.');
+            });
+        });
+
+        function showErrorPopup(message) {
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorPopup').style.display = 'block';
+        }
+
+        function closePopup() {
+            document.getElementById('errorPopup').style.display = 'none';
+        }
+    </script>
 </body>
 </html>
