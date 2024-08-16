@@ -11,10 +11,18 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 import os
+from decouple import config
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Read the encryption key from the .env file
+ENCRYPTION_KEY = config('ENCRYPTION_KEY', default='')
+
+# Ensure the key is 32 bytes long (256 bits)
+if len(ENCRYPTION_KEY) != 44:  # Base64 encoded key is 44 chars long
+    raise ValueError("ENCRYPTION_KEY must be 32 bytes when decoded (44 characters in base64).")
 
 
 # Quick-start development settings - unsuitable for production
