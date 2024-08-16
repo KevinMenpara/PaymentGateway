@@ -8,7 +8,7 @@ from django.template import loader
 def signUp(request):
     try:
         # signup_template = loader.get_template("signUpLogin/signUp.html")
-        context = {"login_url":reverse('login')}
+        context = {}
         # return HttpResponse(signup_template.render(context,request))
         return render(request,"signUpLogin/signUp.html",context)
     except:
@@ -17,7 +17,7 @@ def signUp(request):
 def login(request):
     try:
         # login_template = loader.get_template("signUpLogin/login.html")
-        context = {"signUp_url":reverse('signUp')}
+        context = {}
         return render(request,"signUpLogin/login.html",context)
         # return HttpResponse(login_template.render(context,request))
     except:
@@ -26,7 +26,7 @@ def login(request):
 def thankyou(request):
     try:
         # thankyou_template = loader.get_template("signUpLogin/thankYou.html")
-        context = {"home_url":reverse('login')}
+        context = {}
         return render(request,"signUpLogin/thankYou.html",context)
         # return HttpResponse(thankyou_template.render(context,request))
     except:
