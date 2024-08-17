@@ -7,7 +7,7 @@ from django.core.mail import send_mail
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.utils import timezone
-from django.http import JsonResponse, HttpResponseNotFound
+from django.http import JsonResponse
 from datetime import datetime, timedelta
 from .forms import UserSignupForm, UserLoginForm
 from .models import User
@@ -47,7 +47,9 @@ def signUp(request):
 
                 # Generate and store security code in session
                 security_code = generate_security_code()
-                request.session['security_code'] = security_code
+                user = User.objects.first()  # Replace with a specific user if needed
+                encrypted_code = user.encrypt(security_code)
+                request.session['security_code'] = encrypted_code
                 request.session['security_code_expires_at'] = (timezone.now() + timedelta(minutes=5)).isoformat()
 
                 # Send security code via email
@@ -78,7 +80,8 @@ def login(request):
 
                     # Generate and store security code in session
                     security_code = generate_security_code()
-                    request.session['security_code'] = security_code
+                    encrypted_code = user.encrypt(security_code)
+                    request.session['security_code'] = encrypted_code
                     request.session['security_code_expires_at'] = (timezone.now() + timedelta(minutes=5)).isoformat()
 
                     # Send security code via email
@@ -102,10 +105,10 @@ def login(request):
 def verify_code(request):
     if request.method == 'POST':
         code = request.POST.get('code')
-        stored_code = request.session.get('security_code')
+        encrypted_code = request.session.get('security_code')
         expires_at_str = request.session.get('security_code_expires_at')
 
-        if stored_code and expires_at_str:
+        if encrypted_code and expires_at_str:
             # Parse the expiration time
             expires_at = parse_datetime(expires_at_str)
 
@@ -116,7 +119,10 @@ def verify_code(request):
             if timezone.now() > expires_at:
                 return JsonResponse({'error': 'Security code expired.'}, status=400)
 
-            if code == stored_code:
+            user = User.objects.first()  # Replace with a specific user if needed
+            decrypted_code = user.decrypt(encrypted_code)
+
+            if code == decrypted_code:
                 # Security code is valid, log the user in and redirect
                 user_id = request.session.get('login_data', {}).get('user_id')
                 if user_id:
@@ -137,4 +143,3 @@ def verify_code(request):
 
 def thankyou(request):
     return render(request, 'signUpLogin/thankyou.html')
-
