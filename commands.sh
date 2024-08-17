@@ -13,3 +13,9 @@ python manage.py migrate
 python manage.py showmigrations
 
 python manage.py createsuperuser
+
+pip install python-decouple
+
+pip install cryptography
+
+pip install django-allauth

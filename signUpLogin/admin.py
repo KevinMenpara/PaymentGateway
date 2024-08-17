@@ -6,6 +6,7 @@ from django.http import HttpResponse
 import csv
 from signUpLogin.models import User
 
+
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
     list_display = ('name', 'email', 'dob', 'expiry', 'ammount', 'created_at', 'updated_at', 'active')

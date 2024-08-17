@@ -24,6 +24,7 @@ ENCRYPTION_KEY = config('ENCRYPTION_KEY', default='')
 if len(ENCRYPTION_KEY) != 44:  # Base64 encoded key is 44 chars long
     raise ValueError("ENCRYPTION_KEY must be 32 bytes when decoded (44 characters in base64).")
 
+SITE_ID = 1
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -36,6 +37,10 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+ACCOUNT_AUTHENTICATED_LOGIN_REDIRECTS = True
+
+LOGIN_REDIRECT_URL = '/signup'  # Redirect to homepage after login
+ACCOUNT_LOGOUT_REDIRECT_URL = '/'  # Redirect to homepage after logout
 
 # Application definition
 
@@ -47,6 +52,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'signUpLogin.apps.SignuploginConfig',
+    'django.contrib.sites',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
+    
 ]
 
 MIDDLEWARE = [
@@ -57,9 +68,15 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'src.urls'
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
 
 TEMPLATES = [
     {
@@ -77,10 +94,7 @@ TEMPLATES = [
     },
 ]
 
-
-
 WSGI_APPLICATION = 'src.wsgi.application'
-
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
@@ -91,7 +105,6 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -111,9 +124,28 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
+
+# SOCIALACCOUNT_PROVIDERS = {
+#     'google': {
+#         'SCOPE': [
+#             'profile',
+#             'email',
+#         ],
+#         'AUTH_PARAMS': {
+#             'access_type': 'online',
+#         },
+#         'OAUTH_PKCE_ENABLED': True,
+#         'APP': {
+#             'client_id': '682080890766-vsiogr9obv1ov0uvigm9efmpllmq4ihc.apps.googleusercontent.com',
+#             'secret': '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',
+#          }
+#     }
+# }
+
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = '682080890766-vsiogr9obv1ov0uvigm9efmpllmq4ihc.apps.googleusercontent.com'
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = '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'
 
 LANGUAGE_CODE = 'en-us'
 
@@ -122,7 +154,6 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/

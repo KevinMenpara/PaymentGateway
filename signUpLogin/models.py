@@ -6,6 +6,7 @@ import base64
 import os
 
 class User(models.Model):
+    # transaction_id = models.UUIDField(default=uuid4, editable=False, unique=True)
     name = models.CharField(max_length=255)
     email = models.EmailField(unique=True)
     password = models.TextField()  # Store encrypted password
