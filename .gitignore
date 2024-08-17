@@ -12,6 +12,7 @@ local_settings.py
 db.sqlite3
 /static/
 /media/
+.json
 
 # Environment
 .env

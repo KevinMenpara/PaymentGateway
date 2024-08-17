@@ -37,7 +37,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-ACCOUNT_AUTHENTICATED_LOGIN_REDIRECTS = True
+# ACCOUNT_AUTHENTICATED_LOGIN_REDIRECTS = True
 
 LOGIN_REDIRECT_URL = '/signup'  # Redirect to homepage after login
 ACCOUNT_LOGOUT_REDIRECT_URL = '/'  # Redirect to homepage after logout
@@ -52,11 +52,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'signUpLogin.apps.SignuploginConfig',
-    'django.contrib.sites',
-    'allauth',
-    'allauth.account',
-    'allauth.socialaccount',
-    'allauth.socialaccount.providers.google',
+    # 'django.contrib.sites',
+    # 'allauth',
+    # 'allauth.account',
+    # 'allauth.socialaccount',
+    # 'allauth.socialaccount.providers.google',
     
 ]
 
@@ -68,15 +68,15 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'allauth.account.middleware.AccountMiddleware',
+    # 'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'src.urls'
 
-AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',
-    'allauth.account.auth_backends.AuthenticationBackend',
-]
+# AUTHENTICATION_BACKENDS = [
+#     'django.contrib.auth.backends.ModelBackend',
+#     'allauth.account.auth_backends.AuthenticationBackend',
+# ]
 
 TEMPLATES = [
     {

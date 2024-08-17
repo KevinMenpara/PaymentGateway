@@ -95,7 +95,7 @@
 <body>
     <div class="container">
         <h2>Signup</h2>
-        <form id="signupForm" method="post" action="{% url 'signUp' %}">
+        <form id="signupForm" method="post">
             {% csrf_token %}
             <div class="form-group">
                 {{ form.name.label_tag }}
@@ -124,14 +124,14 @@
             <div class="form-group">
                 <input type="submit" value="Sign Up">
             </div>
-            <div class="form-group">
+            {% comment %} <div class="form-group">
                 <p>Or sign up using Google:</p>
                 <a href="{{ google_login_url }}">
                     <button type="button" class="google-signup">
                         Sign up with Google
                     </button>
                 </a>
-            </div>
+            </div> {% endcomment %}
             <div class="form-group">
                 <p>
                     Already have an account? 

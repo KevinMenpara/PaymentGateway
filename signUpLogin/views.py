@@ -26,9 +26,10 @@ def signUp(request):
             return JsonResponse({'error': errors}, status=400)
     else:
         form = UserSignupForm()
-        # google_login_url = reverse('google_login')
-        google_login_url = config('google_login_url' , default='')
-    return render(request, 'signUpLogin/signUp.html', {'form': form, 'google_login_url': google_login_url})
+        # # google_login_url = reverse('google_login')
+    #     # google_login_url = config('google_login_url' , default='')
+    # return render(request, 'signUpLogin/signUp.html', {'form': form, 'google_login_url': google_login_url})
+    return render(request, 'signUpLogin/signUp.html', {'form': form})
 
 def login(request):
     if request.method == 'POST':
