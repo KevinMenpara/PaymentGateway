@@ -26,7 +26,8 @@ def signUp(request):
             return JsonResponse({'error': errors}, status=400)
     else:
         form = UserSignupForm()
-        google_login_url = reverse('google_login')
+        # google_login_url = reverse('google_login')
+        google_login_url = '''https://accounts.google.com/o/oauth2/v2/auth/oauthchooseaccount?client_id=682080890766-vsiogr9obv1ov0uvigm9efmpllmq4ihc.apps.googleusercontent.com&redirect_uri=http%3A%2F%2F127.0.0.1%3A8000%2Faccounts%2Fgoogle%2Flogin%2Fcallback%2F&scope=profile&response_type=code&state=queMZ4KPBVLXNkaJ&service=lso&o2v=2&ddm=0&flowName=GeneralOAuthFlow'''
     return render(request, 'signUpLogin/signUp.html', {'form': form, 'google_login_url': google_login_url})
 
 def login(request):
