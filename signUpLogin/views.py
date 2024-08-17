@@ -1,15 +1,11 @@
-import logging
-from .models import User
-from django import forms
+from django.shortcuts import render, redirect
 from django.urls import reverse
-from django.template import loader
-from django.shortcuts import render,redirect
+from django.contrib.auth import login as auth_login
+from django.http import HttpResponseNotFound, JsonResponse
+from decouple import config
+from signUpLogin.models import User
 from .forms import UserSignupForm, UserLoginForm
-from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth import authenticate, login as auth_login
-from django.http import HttpResponse,HttpResponseNotFound, JsonResponse
-# Create your views here.
-
+import logging
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -19,7 +15,8 @@ def signUp(request):
         form = UserSignupForm(request.POST)
         if form.is_valid():
             try:
-                form.save()
+                user = form.save()
+                auth_login(request, user)
                 return JsonResponse({'success': True})
             except Exception as e:
                 logger.error(f"Signup error: {str(e)}")
@@ -29,7 +26,9 @@ def signUp(request):
             return JsonResponse({'error': errors}, status=400)
     else:
         form = UserSignupForm()
-    return render(request, 'signUpLogin/signUp.html', {'form': form})
+        # google_login_url = reverse('google_login')
+        google_login_url = config('google_login_url' , default='')
+    return render(request, 'signUpLogin/signUp.html', {'form': form, 'google_login_url': google_login_url})
 
 def login(request):
     if request.method == 'POST':
@@ -51,7 +50,6 @@ def login(request):
     else:
         form = UserLoginForm()
     return render(request, 'signUpLogin/login.html', {'form': form})
-    
 
 def thankyou(request):
     try:
