@@ -133,12 +133,11 @@
         <p id="errorMessage">Error message here</p>
         <button onclick="closePopup()">Close</button>
     </div>
-    {% comment %} <div id="2fa-modal" style="display:none;">
-        <h2>Enter Security Code</h2>
-        <input type="text" id="2fa-code" placeholder="Enter your 2FA code">
-        <button id="verify-2fa-code">Verify</button>
-    </div> {% endcomment %}
     <script>
+        function getCsrfToken() {
+            return document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+        }
+
         function showErrorPopup(message) {
             document.getElementById('errorMessage').textContent = message;
             document.getElementById('errorPopup').style.display = 'block';
@@ -151,44 +150,24 @@
         document.getElementById('signupForm').addEventListener('submit', function(event) {
             event.preventDefault();
             const formData = new FormData(this);
-            fetch('/signup/', {
+            fetch('{% url "signUp" %}', {
                 method: 'POST',
                 body: formData,
                 headers: {
                     'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
                 }
             }).then(response => response.json()).then(data => {
-                if (data.error) {
-                    showErrorPopup(data.error);
-                } else if (data.success) {
-                    document.getElementById('2fa-modal').style.display = 'block';
-                }
-            }).catch(error => {
-                showErrorPopup('An unexpected error occurred.');
-            });
-        });
-
-        document.getElementById('verify-2fa-code').addEventListener('click', function() {
-            const code = document.getElementById('2fa-code').value;
-
-            fetch('/verify_code/', {
-                method: 'POST',
-                body: new URLSearchParams({
-                    'code': code
-                }),
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                }
-            }).then(response => response.json()).then(data => {
                 if (data.success) {
-                    window.location.href = '/thankyou';
+                    // Redirect to the verification page if login is successful
+                    window.location.href = '{% url "verify_code" %}'; // Always redirect to the verification page
                 } else {
-                    showErrorPopup(data.error);
+                    showErrorPopup(data.error || 'An error occurred. Please try again.');
                 }
             }).catch(error => {
                 showErrorPopup('An unexpected error occurred.');
             });
         });
+
     </script>
 </body>
 </html>

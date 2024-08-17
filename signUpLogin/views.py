@@ -38,24 +38,36 @@ def signUp(request):
     if request.method == 'POST':
         form = UserSignupForm(request.POST)
         if form.is_valid():
+            email = form.cleaned_data['email']
+            raw_password = form.cleaned_data['password']
+            dob = form.cleaned_data['dob']
+            expiry = form.cleaned_data['expiry']
+            name = form.cleaned_data['name']
+            ammount = form.cleaned_data['ammount']
+
             try:
                 # Temporarily store signup data in session
+                user = User()
+                encrypted_password = user.encrypt(raw_password)
                 request.session['signup_data'] = {
-                    'email': form.cleaned_data['email'],
-                    'password': form.cleaned_data['password'],
+                    'email': email,
+                    'password': encrypted_password,
+                    'dob': dob.isoformat(),  # Convert date to string
+                    'expiry': expiry.isoformat(),  # Convert date to string
+                    'name': name,
+                    'ammount': ammount
                 }
 
                 # Generate and store security code in session
                 security_code = generate_security_code()
-                user = User.objects.first()  # Replace with a specific user if needed
                 encrypted_code = user.encrypt(security_code)
                 request.session['security_code'] = encrypted_code
                 request.session['security_code_expires_at'] = (timezone.now() + timedelta(minutes=5)).isoformat()
 
                 # Send security code via email
-                send_security_code_email(form.cleaned_data['email'], security_code)
+                send_security_code_email(email, security_code)
 
-                return redirect('verify_code')  # Redirect to verification page
+                return JsonResponse({'success': True, 'redirect_url': '/verify-code/'})
             except Exception as e:
                 logger.error(f"Signup error: {str(e)}")
                 return JsonResponse({'error': 'Failed to process signup. Please try again later.'}, status=500)
@@ -65,6 +77,7 @@ def signUp(request):
     else:
         form = UserSignupForm()
     return render(request, 'signUpLogin/signUp.html', {'form': form})
+
 
 def login(request):
     if request.method == 'POST':
@@ -102,6 +115,7 @@ def login(request):
         form = UserLoginForm()
     return render(request, 'signUpLogin/login.html', {'form': form})
 
+
 def verify_code(request):
     if request.method == 'POST':
         code = request.POST.get('code')
@@ -109,37 +123,58 @@ def verify_code(request):
         expires_at_str = request.session.get('security_code_expires_at')
 
         if encrypted_code and expires_at_str:
-            # Parse the expiration time
-            expires_at = parse_datetime(expires_at_str)
+            try:
+                # Parse the expiration time
+                expires_at = parse_datetime(expires_at_str)
 
-            if expires_at is None:
-                return JsonResponse({'error': 'Invalid expiration time format.'}, status=400)
+                if expires_at is None:
+                    return JsonResponse({'error': 'Invalid expiration time format.'}, status=400)
 
-            # Check if the expiration time is valid
-            if timezone.now() > expires_at:
-                return JsonResponse({'error': 'Security code expired.'}, status=400)
+                # Check if the expiration time is valid
+                if timezone.now() > expires_at:
+                    return JsonResponse({'error': 'Security code expired.'}, status=400)
+                user = User()
+                # Decrypt and verify the security code
+                decrypted_code = user.decrypt(encrypted_code)
+                if code == decrypted_code:
+                    signup_data = request.session.get('signup_data')
+                    if signup_data:
+                        try:
+                            # Convert date strings back to date objects
+                            dob = parse_datetime(signup_data['dob']).date()
+                            expiry = parse_datetime(signup_data['expiry']).date()
 
-            user = User.objects.first()  # Replace with a specific user if needed
-            decrypted_code = user.decrypt(encrypted_code)
+                            # Create a new user with the signup data
+                            user = User(
+                                name=signup_data['name'],
+                                email=signup_data['email'],
+                                dob=dob,
+                                expiry=expiry,
+                                ammount=signup_data['ammount']
+                            )
+                            user.set_password(signup_data['password'])
+                            user.save()
 
-            if code == decrypted_code:
-                # Security code is valid, log the user in and redirect
-                user_id = request.session.get('login_data', {}).get('user_id')
-                if user_id:
-                    try:
-                        user = User.objects.get(id=user_id)
-                        auth_login(request, user)
-                        return JsonResponse({'success': True, 'redirect_url': reverse('thankYou')})
-                    except User.DoesNotExist:
-                        return JsonResponse({'error': 'User not found.'}, status=404)
-                return JsonResponse({'error': 'User ID not found in session.'}, status=404)
-
-            return JsonResponse({'error': 'Invalid security code.'}, status=400)
-
-        return JsonResponse({'error': 'Security code not found.'}, status=400)
-
+                            # Log the user in
+                            auth_login(request, user)
+                            request.session.pop('signup_data')  # Clear signup data from session
+                            return JsonResponse({'success': True, 'redirect_url': '/thank-you/'})
+                        except Exception as e:
+                            logger.error(f"Signup data error: {str(e)}")
+                            return JsonResponse({'error': 'Failed to create user. Please try again later.'}, status=500)
+                    else:
+                        return JsonResponse({'error': 'Signup data not found in session.'}, status=400)
+                else:
+                    return JsonResponse({'error': 'Invalid security code.'}, status=400)
+            except Exception as e:
+                logger.error(f"Verification error: {str(e)}")
+                return JsonResponse({'error': 'Failed to verify code. Please try again later.'}, status=500)
+        else:
+            return JsonResponse({'error': 'Security code or expiration time not found.'}, status=400)
+    
     # For GET request, render the verification form
     return render(request, 'signUpLogin/verify_code.html')
+
 
 def thankyou(request):
     return render(request, 'signUpLogin/thankyou.html')
