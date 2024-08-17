@@ -19,7 +19,7 @@ from django.urls import path,include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    # path('accounts/', include('allauth.urls')), 
+    path('accounts/', include('allauth.urls')), 
     path('', include('signUpLogin.urls')),
     # path('api/v1/<uuid:payment_id>',include('paymentProcess.urls')),
 ]
