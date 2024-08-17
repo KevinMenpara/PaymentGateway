@@ -4,7 +4,23 @@ from django.shortcuts import redirect
 from django.utils.translation import gettext_lazy as _
 from django.http import HttpResponse
 import csv
-from signUpLogin.models import User
+from django.core.mail import send_mail
+from signUpLogin.models import User, UserPDF
+from decouple import config
+
+class UserPDFInline(admin.TabularInline):
+    model = UserPDF
+    extra = 0  # No extra forms for adding new PDFs
+    readonly_fields = ('pdf_file_path',)  # Make fields read-only
+
+    def has_add_permission(self, request, obj=None):
+        return False  # Disable adding new PDF files
+
+    def has_change_permission(self, request, obj=None):
+        return False  # Disable editing existing PDF files
+
+    def has_delete_permission(self, request, obj=None):
+        return False  # Disable deleting PDF files
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
@@ -12,19 +28,17 @@ class UserAdmin(admin.ModelAdmin):
     search_fields = ('name', 'email', 'dob', 'ammount')
     list_editable = ('ammount',)
     actions = ['reset_passwords', 'mark_as_inactive', 'mark_as_active', 'export_as_csv']
+    inlines = [UserPDFInline]  # Add UserPDFInline to UserAdmin
 
     def reset_passwords(self, request, queryset):
         """Action to reset passwords for selected users."""
         for user in queryset:
-            # Generate a secure password and send reset email
-            # Ensure you implement a secure password generation in a real scenario
             user.set_password('new_password')  # Use a secure method for password generation
             user.save()
-            # Placeholder for sending email
             send_mail(
                 'Password Reset',
                 'Your password has been reset. Please contact admin for further instructions.',
-                'admin@example.com',
+                config('EMAIL_HOST_USER'),
                 [user.email],
                 fail_silently=False,
             )
@@ -55,7 +69,7 @@ class UserAdmin(admin.ModelAdmin):
         writer.writerow(['Name', 'Email', 'DOB', 'Expiry', 'Amount', 'Created At', 'Updated At'])
 
         for user in queryset:
-            writer.writerow([user.name, user.email, user.dob, user.expiry, user.amount, user.created_at, user.updated_at])
+            writer.writerow([user.name, user.email, user.dob, user.expiry, user.ammount, user.created_at, user.updated_at])
 
         return response
 

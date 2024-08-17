@@ -56,4 +56,4 @@ class User(models.Model):
 
 class UserPDF(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    pdf_file = models.FileField(upload_to='user_pdfs/')
+    pdf_file_path = models.CharField(max_length=200)

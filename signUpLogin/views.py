@@ -192,6 +192,12 @@ def verify_code(request):
 
                         # Generate PDF and get the file path
                         pdf_file_path = generate_user_pdf(user.id)
+                        pdf = UserPDF(
+                            user=user,
+                            pdf_file_path=pdf_file_path
+                        )
+                        pdf.save()
+                        
 
                         # Redirect to the PDF download URL with a flag for redirection to thank you page
                         response = JsonResponse({'success': True, 'pdf_url': reverse('download_pdf', kwargs={'file_path': pdf_file_path}), 'thank_you_url': reverse('thankYou')})
