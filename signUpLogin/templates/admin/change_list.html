@@ -1,0 +1,20 @@
+{% extends "admin/change_list.html" %}
+
+{% load i18n %}
+
+{% block object-tools %}
+  {{ block.super }}
+  {% if show_active_users %}
+    <ul class="object-tools">
+      <li>
+        <a href="{% url 'admin:show_all_users' %}" class="button">{% trans "Show All Users" %}</a>
+      </li>
+    </ul>
+  {% else %}
+    <ul class="object-tools">
+      <li>
+        <a href="{% url 'admin:show_active_users' %}" class="button">{% trans "Show Active Users" %}</a>
+      </li>
+    </ul>
+  {% endif %}
+{% endblock %}

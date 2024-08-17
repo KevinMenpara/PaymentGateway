@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Code</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            width: 300px;
+        }
+        .container h2 {
+            margin-top: 0;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .form-group input[type="submit"] {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .form-group input[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+        .error-popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            border-radius: 4px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        .error-popup button {
+            background: #721c24;
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 4px;
+        }
+        .error-popup button:hover {
+            background: #5a1d1d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Verify Security Code</h2>
+        <form id="verifyForm" method="post" action="{% url 'verify_code' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="code">Security Code:</label>
+                <input type="text" id="code" name="code" required>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Verify">
+            </div>
+        </form>
+    </div>
+    <div id="errorPopup" class="error-popup">
+        <p id="errorMessage">Error message here</p>
+        <button onclick="closeErrorPopup()">Close</button>
+    </div>
+    <script>
+        function getCookie(name) {
+            const cookieName = encodeURIComponent(name) + "=";
+            const cookieArray = document.cookie.split(';');
+
+            for (let i = 0; i < cookieArray.length; i++) {
+                let cookie = cookieArray[i].trim();
+                if (cookie.indexOf(cookieName) === 0) {
+                    return decodeURIComponent(cookie.substring(cookieName.length, cookie.length));
+                }
+            }
+            return null;
+        }
+
+        function showErrorPopup(message) {
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorPopup').style.display = 'block';
+        }
+
+        function closeErrorPopup() {
+            document.getElementById('errorPopup').style.display = 'none';
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('verifyForm');
+
+            form.addEventListener('submit', function (event) {
+                event.preventDefault(); // Prevent the default form submission
+
+                const code = document.getElementById('code').value;
+                const csrfToken = getCookie('csrftoken'); // Get the CSRF token
+
+                fetch('{% url "verify_code" %}', {
+                    method: 'POST',
+                    body: new URLSearchParams({ 'code': code }),
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Check if PDF URL is provided
+                        if (data.pdf_url) {
+                            // Trigger PDF download
+                            const link = document.createElement('a');
+                            link.href = data.pdf_url;
+                            link.download = 'user_info.pdf';
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                        }
+
+                        // Redirect to thank you page after a delay
+                        if (data.thank_you_url) {
+                            setTimeout(() => {
+                                window.location.href = data.thank_you_url;
+                            }, 1000); // Adjust delay as needed
+                        }
+                    } else {
+                        showErrorPopup(data.error || 'An error occurred. Please try again.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showErrorPopup('An error occurred. Please try again.');
+                });
+            });
+        });
+    </script>
+</body>
+</html>
