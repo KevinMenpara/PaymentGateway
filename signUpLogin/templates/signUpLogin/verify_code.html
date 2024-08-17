@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Page</title>
-    <meta name="csrf-token" content="{% csrf_token %}">
+    <title>Verify Code</title>
     <style>
+        /* Add your styles here */
         body {
             font-family: Arial, sans-serif;
             display: flex;
@@ -49,13 +49,6 @@
         .form-group input[type="submit"]:hover {
             background-color: #0056b3;
         }
-        .form-group a {
-            color: #007bff;
-            text-decoration: none;
-        }
-        .form-group a:hover {
-            text-decoration: underline;
-        }
         .error-popup {
             display: none;
             position: fixed;
@@ -86,22 +79,15 @@
 </head>
 <body>
     <div class="container">
-        <h2>Login</h2>
-        <form id="loginForm" method="post" action="{% url 'login' %}">
+        <h2>Verify Security Code</h2>
+        <form id="verifyForm" method="post" action="{% url 'verify_code' %}">
             {% csrf_token %}
             <div class="form-group">
-                <label for="email">Email:</label>
-                {{ form.email }}
+                <label for="code">Security Code:</label>
+                <input type="text" id="code" name="code" required>
             </div>
             <div class="form-group">
-                <label for="password">Password:</label>
-                {{ form.password }}
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Login">
-            </div>
-            <div class="form-group">
-                <p>Don't have an account? <a href="{% url 'signUp' %}">Sign up</a></p>
+                <input type="submit" value="Verify">
             </div>
         </form>
     </div>
@@ -110,40 +96,60 @@
         <button onclick="closeErrorPopup()">Close</button>
     </div>
     <script>
-        function getCsrfToken() {
-            return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        // Function to get a specific cookie by name
+        function getCookie(name) {
+            const cookieName = encodeURIComponent(name) + "=";
+            const cookieArray = document.cookie.split(';');
+
+            for (let i = 0; i < cookieArray.length; i++) {
+                let cookie = cookieArray[i].trim();
+                if (cookie.indexOf(cookieName) === 0) {
+                    return decodeURIComponent(cookie.substring(cookieName.length, cookie.length));
+                }
+            }
+            return null;
         }
-    
+
         function showErrorPopup(message) {
             document.getElementById('errorMessage').textContent = message;
             document.getElementById('errorPopup').style.display = 'block';
         }
-    
+
         function closeErrorPopup() {
             document.getElementById('errorPopup').style.display = 'none';
         }
-    
-        document.getElementById('loginForm').addEventListener('submit', function(event) {
-            event.preventDefault();
-            const formData = new FormData(this);
-    
-            fetch('{% url "login" %}', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRFToken': getCsrfToken()
-                }
-            }).then(response => response.json()).then(data => {
-                if (data.success) {
-                    // Redirect to the verification page if login is successful
-                    window.location.href = '{% url "verify_code" %}'; // Always redirect to the verification page
-                } else {
-                    showErrorPopup(data.error || 'An error occurred. Please try again.');
-                }
-            }).catch(() => {
-                showErrorPopup('An unexpected error occurred.');
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('verifyForm');
+
+            form.addEventListener('submit', function (event) {
+                event.preventDefault(); // Prevent the default form submission
+
+                const code = document.getElementById('code').value;
+                const csrfToken = getCookie('csrftoken'); // Get the CSRF token
+
+                fetch('{% url "verify_code" %}', {
+                    method: 'POST',
+                    body: new URLSearchParams({ 'code': code }),
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = "{% url 'thankYou' %}"; // Redirect on success
+                    } else {
+                        alert('Invalid security code.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred. Please try again.');
+                });
             });
         });
-    </script>        
+    </script>
 </body>
 </html>

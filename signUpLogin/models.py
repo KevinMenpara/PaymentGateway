@@ -6,6 +6,7 @@ import base64
 import os
 
 class User(models.Model):
+    # transaction_id = models.UUIDField(default=uuid4, editable=False, unique=True)
     name = models.CharField(max_length=255)
     email = models.EmailField(unique=True)
     password = models.TextField()  # Store encrypted password
@@ -15,6 +16,7 @@ class User(models.Model):
     active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    last_login = models.DateTimeField(null=True, blank=True ,auto_now=True)
 
     key = base64.b64decode(settings.ENCRYPTION_KEY)  # Ensure this key is 32 bytes long
 
