@@ -1,5 +1,10 @@
 from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect
 from django.urls import reverse
+from django.contrib.auth import login as auth_login
+from django.http import HttpResponseNotFound, JsonResponse
+from decouple import config
+from signUpLogin.models import User
 from django.contrib.auth import login as auth_login
 from django.http import HttpResponseNotFound, JsonResponse
 from decouple import config
@@ -17,6 +22,8 @@ def signUp(request):
             try:
                 user = form.save()
                 auth_login(request, user)
+                user = form.save()
+                auth_login(request, user)
                 return JsonResponse({'success': True})
             except Exception as e:
                 logger.error(f"Signup error: {str(e)}")
@@ -26,10 +33,9 @@ def signUp(request):
             return JsonResponse({'error': errors}, status=400)
     else:
         form = UserSignupForm()
-        # # google_login_url = reverse('google_login')
-    #     # google_login_url = config('google_login_url' , default='')
-    # return render(request, 'signUpLogin/signUp.html', {'form': form, 'google_login_url': google_login_url})
-    return render(request, 'signUpLogin/signUp.html', {'form': form})
+        # google_login_url = reverse('google_login')
+        google_login_url = config('google_login_url' , default='')
+    return render(request, 'signUpLogin/signUp.html', {'form': form, 'google_login_url': google_login_url})
 
 def login(request):
     if request.method == 'POST':
