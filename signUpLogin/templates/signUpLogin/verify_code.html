@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Verify Code</title>
     <style>
-        /* Add your styles here */
         body {
             font-family: Arial, sans-serif;
             display: flex;
@@ -96,7 +95,6 @@
         <button onclick="closeErrorPopup()">Close</button>
     </div>
     <script>
-        // Function to get a specific cookie by name
         function getCookie(name) {
             const cookieName = encodeURIComponent(name) + "=";
             const cookieArray = document.cookie.split(';');
@@ -139,14 +137,30 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        window.location.href = "{% url 'thankYou' %}"; // Redirect on success
+                        // Check if PDF URL is provided
+                        if (data.pdf_url) {
+                            // Trigger PDF download
+                            const link = document.createElement('a');
+                            link.href = data.pdf_url;
+                            link.download = 'user_info.pdf';
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                        }
+
+                        // Redirect to thank you page after a delay
+                        if (data.thank_you_url) {
+                            setTimeout(() => {
+                                window.location.href = data.thank_you_url;
+                            }, 1000); // Adjust delay as needed
+                        }
                     } else {
-                        alert('Invalid security code.');
+                        showErrorPopup(data.error || 'An error occurred. Please try again.');
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('An error occurred. Please try again.');
+                    showErrorPopup('An error occurred. Please try again.');
                 });
             });
         });

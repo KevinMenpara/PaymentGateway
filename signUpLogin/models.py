@@ -53,3 +53,7 @@ class User(models.Model):
     def check_password(self, raw_password):
         """Check the user's password."""
         return self.decrypt(self.password) == raw_password
+
+class UserPDF(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    pdf_file = models.FileField(upload_to='user_pdfs/')

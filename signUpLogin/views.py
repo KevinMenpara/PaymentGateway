@@ -7,13 +7,13 @@ from decouple import config
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from django.core.mail import send_mail
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect ,get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
-from django.http import JsonResponse,HttpResponse
+from django.http import HttpResponseNotFound, HttpResponseRedirect, JsonResponse,HttpResponse
 from datetime import datetime, timedelta
 from .forms import UserSignupForm, UserLoginForm
-from .models import User
+from .models import User,UserPDF
 from django.contrib.auth import login as auth_login
 from django.template.loader import render_to_string
 from io import BytesIO
@@ -24,6 +24,9 @@ from cryptography.hazmat.backends import default_backend
 from django.conf import settings
 import base64
 from .cipher import CustomCipher
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
+
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -45,6 +48,7 @@ def send_security_code_email(email, security_code):
     except Exception as e:
         logger.error(f"Failed to send email: {str(e)}")
         raise
+
 
 def signUp(request):
     if request.method == 'POST':
@@ -142,31 +146,40 @@ def verify_code(request):
         expires_at_str = request.session.get('security_code_expires_at')
 
         if encrypted_code and expires_at_str:
-            # Parse the expiration time
             expires_at = parse_datetime(expires_at_str)
 
             if expires_at is None:
                 return JsonResponse({'error': 'Invalid expiration time format.'}, status=400)
 
-            # Check if the expiration time is valid
             if timezone.now() > expires_at:
                 return JsonResponse({'error': 'Security code expired.'}, status=400)
 
-            user_cipher = CustomCipher()  # Use CustomCipher instead of Cipher
+            user_cipher = CustomCipher()
             decrypted_code = user_cipher.decrypt(encrypted_code)
 
             if code == decrypted_code:
-                # Security code is valid
                 signup_data = request.session.get('signup_data')
                 login_data = request.session.get('login_data')
 
-                if signup_data:
+                if login_data:
+                    user_id = login_data.get('user_id')
+                    if user_id:
+                        try:
+                            print(user_id)
+                            user = User.objects.get(id=user_id)
+                            auth_login(request, user)
+                            request.session.pop('login_data', None)
+                            return JsonResponse({'success': True, 'thank_you_url': reverse('thankYou')})
+                        except User.DoesNotExist:
+                            return JsonResponse({'error': 'User not found.'}, status=404)
+                    else:
+                        return JsonResponse({'error': 'User ID not found in session.'}, status=404)
+
+                elif signup_data:
                     try:
-                        # Convert date strings back to date objects
                         dob = parse_datetime(signup_data['dob']).date()
                         expiry = parse_datetime(signup_data['expiry']).date()
-
-                        # Create a new user with the signup data
+                        print(dob)
                         user = User(
                             name=signup_data['name'],
                             email=signup_data['email'],
@@ -177,32 +190,22 @@ def verify_code(request):
                         user.set_password(signup_data['password'])
                         user.save()
 
-                        # Log the user in
-                        auth_login(request, user)
-                        request.session.pop('signup_data', None)  # Clear signup data from session, safely
-                        return JsonResponse({'success': True, 'redirect_url': reverse('thankYou')})
+                        # Generate PDF and get the file path
+                        pdf_file_path = generate_user_pdf(user.id)
+
+                        # Redirect to the PDF download URL with a flag for redirection to thank you page
+                        response = JsonResponse({'success': True, 'pdf_url': reverse('download_pdf', kwargs={'file_path': pdf_file_path}), 'thank_you_url': reverse('thankYou')})
+                        return response
+
                     except Exception as e:
                         logger.error(f"Signup data error: {str(e)}")
                         return JsonResponse({'error': 'Failed to create user. Please try again later.'}, status=500)
 
-                elif login_data:
-                    user_id = login_data.get('user_id')
-                    if user_id:
-                        try:
-                            user = User.objects.get(id=user_id)
-                            auth_login(request, user)
-                            request.session.pop('login_data', None)  # Clear login data from session, safely
-                            return JsonResponse({'success': True, 'redirect_url': reverse('thankYou')})
-                        except User.DoesNotExist:
-                            return JsonResponse({'error': 'User not found.'}, status=404)
-                    else:
-                        return JsonResponse({'error': 'User ID not found in session.'}, status=404)
 
             return JsonResponse({'error': 'Invalid security code.'}, status=400)
 
         return JsonResponse({'error': 'Security code not found.'}, status=400)
 
-    # For GET request, render the verification form
     return render(request, 'signUpLogin/verify_code.html')
 
 
@@ -210,37 +213,47 @@ def thankyou(request):
     return render(request, 'signUpLogin/thankyou.html')
 
 
-def generate_pdf(request, user_id):
-    # Fetch the data from the database
-    try:
-        user = User.objects.get(id=user_id)
-    except User.DoesNotExist:
-        return HttpResponse("User not found", status=404)
+def generate_user_pdf(user_id):
+    user = User.objects.get(id=user_id)
 
-    # Create a byte stream buffer
+    # Create a buffer for the PDF
     buffer = BytesIO()
-
-    # Create a PDF object using the buffer
     p = canvas.Canvas(buffer, pagesize=letter)
     width, height = letter
 
-    # Draw content on the PDF
     p.drawString(100, height - 100, f"Name: {user.name}")
     p.drawString(100, height - 120, f"Email: {user.email}")
     p.drawString(100, height - 140, f"Date of Birth: {user.dob}")
     p.drawString(100, height - 160, f"Expiry Date: {user.expiry}")
-    p.drawString(100, height - 180, f"Amount: ${user.amount}")
+    p.drawString(100, height - 180, f"Amount: ${user.ammount}")
     p.drawString(100, height - 200, f"Created At: {user.created_at}")
 
-    # Save the PDF
     p.showPage()
     p.save()
 
-    # Move to the beginning of the StringIO buffer
     buffer.seek(0)
-    return p
-    # # Create a response with the PDF content
-    # response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
-    # response['Content-Disposition'] = 'attachment; filename="receipt.pdf"'
-    # return response
+    pdf_file_path = f"user_{user_id}_info.pdf"
+
+    # Save PDF to the default storage (e.g., local filesystem or cloud storage)
+    file_path = default_storage.save(pdf_file_path, ContentFile(buffer.getvalue()))
+    return file_path
+
+
+def download_pdf(request, file_path):
+    if default_storage.exists(file_path):
+        pdf_file = default_storage.open(file_path, 'rb')
+        response = HttpResponse(pdf_file.read(), content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{file_path}"'
+        pdf_file.close()
+        return response
+    else:
+        return HttpResponseNotFound('File not found')
+
+
+
+# def serve_pdf(request, user_id):
+#     user_pdf = get_object_or_404(UserPDF, user_id=user_id)
+#     response = HttpResponse(user_pdf.pdf_file, content_type='application/pdf')
+#     response['Content-Disposition'] = f'attachment; filename="user_{user_id}_info.pdf"'
+#     return response
 
