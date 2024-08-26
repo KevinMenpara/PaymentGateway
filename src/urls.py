@@ -22,6 +22,6 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/v1/<uuid:payment_id>',include('payment.urls')),
+    path('api/v1/<uuid:transaction_id>',include('payment.urls')),
     path('api/v1/', include('signUpLogin.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
