@@ -19,9 +19,8 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
-
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/v1/<uuid:transaction_id>',include('payment.urls')),
-    path('api/v1/', include('signUpLogin.urls')),
+    path('api/v1/', include('signUpLogin.urls')),  # Ensure this includes your login view
+    path('api/v1/', include('payment.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

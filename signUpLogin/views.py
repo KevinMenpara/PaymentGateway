@@ -169,6 +169,7 @@ def verify_code(request):
                             user = User.objects.get(id=user_id)
                             auth_login(request, user)
                             request.session.pop('login_data', None)
+                            request.session['check_login'] = True
                             return JsonResponse({'success': True, 'thank_you_url': reverse('thankYou')})
                         except User.DoesNotExist:
                             return JsonResponse({'error': 'User not found.'}, status=404)
