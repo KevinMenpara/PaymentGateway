@@ -148,12 +148,13 @@
                             document.body.removeChild(link);
                         }
 
-                        // Redirect to thank you page after a delay
-                        if (data.thank_you_url) {
+                        // Redirect to payment page after a delay
+                        if (data.redirect_url) {
                             setTimeout(() => {
-                                window.location.href = data.thank_you_url;
+                                window.location.href = data.redirect_url;
                             }, 1000); // Adjust delay as needed
                         }
+                        
                     } else {
                         showErrorPopup(data.error || 'An error occurred. Please try again.');
                     }

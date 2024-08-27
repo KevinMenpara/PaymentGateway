@@ -10,7 +10,7 @@ def payment_redirect(request, transaction_id, ammount):
         # Fetch user email from GET parameters
         useremail = request.GET.get('useremail')
         if not useremail:
-            return redirect(reverse('payment:payment_error'))
+            return redirect(reverse('paymentError'))
 
         user = get_object_or_404(User, email=useremail)
 
@@ -55,6 +55,9 @@ def payment_redirect(request, transaction_id, ammount):
         }
         return render(request, 'payment/payment.html', context)
     else:
+        request.session['transaction_id'] = str(transaction_id)
+        request.session['ammount'] = ammount
+        request.session['useremail'] = request.GET.get('useremail')
         return redirect(reverse('login'))
 
 def payment_error(request):

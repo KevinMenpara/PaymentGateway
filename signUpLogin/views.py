@@ -1,6 +1,7 @@
 import base64
 import logging
 import random
+import uuid
 import string
 from django.utils.dateparse import parse_datetime
 from decouple import config
@@ -170,7 +171,18 @@ def verify_code(request):
                             auth_login(request, user)
                             request.session.pop('login_data', None)
                             request.session['check_login'] = True
-                            return JsonResponse({'success': True, 'thank_you_url': reverse('thankYou')})
+                            
+                            # Generate a transaction_id and amount
+                            transaction_id = uuid.UUID(request.session.get('transaction_id'))
+                            ammount = request.session.get('ammount')  # Set the amount based on your logic or session data
+                            email = request.session.get('useremail')
+
+                            # Construct redirect URL with transaction_id, ammount, and useremail
+                            redirect_url = reverse('payment_redirect', kwargs={'transaction_id': transaction_id, 'ammount': ammount})
+                            redirect_url_with_email = f"{redirect_url}?useremail={email}"
+
+                            return JsonResponse({'success': True, 'redirect_url': redirect_url_with_email})
+
                         except User.DoesNotExist:
                             return JsonResponse({'error': 'User not found.'}, status=404)
                     else:
@@ -199,10 +211,22 @@ def verify_code(request):
                         )
                         pdf.save()
                         
+                        # Generate a transaction_id and amount
+                        transaction_id = uuid.UUID(request.session.get('transaction_id'))
+                        ammount = request.session.get('ammount')  # Set the amount based on your logic or session data
+                        email = request.session.get('useremail')
 
-                        # Redirect to the PDF download URL with a flag for redirection to thank you page
-                        response = JsonResponse({'success': True, 'pdf_url': reverse('download_pdf', kwargs={'file_path': pdf_file_path}), 'thank_you_url': reverse('thankYou')})
+                        # Construct redirect URL with transaction_id, ammount, and useremail
+                        redirect_url = reverse('payment_redirect', kwargs={'transaction_id': transaction_id, 'ammount': ammount})
+                        redirect_url_with_email = f"{redirect_url}?useremail={signup_data['email']}"
+
+                        response = JsonResponse({
+                            'success': True,
+                            'pdf_url': reverse('download_pdf', kwargs={'file_path': pdf_file_path}),
+                            'redirect_url': redirect_url_with_email
+                        })
                         return response
+                    
 
                     except Exception as e:
                         logger.error(f"Signup data error: {str(e)}")
