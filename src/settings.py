@@ -37,8 +37,30 @@ DEBUG = config('DEBUG', default='False')
 ALLOWED_HOSTS = ['*']
 
 # settings.py
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+    "https://paymentgateway-riq1.onrender.com",
+    # Add other allowed origins here
+]
 
+CORS_ALLOW_CREDENTIALS = True
+
+
+CORS_ALLOWED_METHODS = [
+    'GET',
+    'POST',
+    'PUT',
+    'PATCH',
+    'DELETE',
+    'OPTIONS',
+]
+
+CORS_ALLOWED_HEADERS = [
+    'content-type',
+    'accept',
+    'authorization',
+    'x-csrftoken',
+    'x-requested-with',
+]
 
 # Application definition
 
