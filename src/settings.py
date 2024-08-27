@@ -39,11 +39,13 @@ ALLOWED_HOSTS = ['*']
 # settings.py
 CORS_ALLOWED_ORIGINS = [
     "https://paymentgateway-riq1.onrender.com",
+    "https://paymentapi.kmmenpara.xyz",
     # Add other allowed origins here
 ]
 
 CSRF_TRUSTED_ORIGINS = [
     "https://paymentgateway-riq1.onrender.com",
+    "https://paymentapi.kmmenpara.xyz",
 ]
 
 
