@@ -29,10 +29,10 @@ if len(ENCRYPTION_KEY) != 44:  # Base64 encoded key is 44 chars long
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-7_44ap=4rwqts)t&!d8g$4oq80l^#fiiho)4$k2c6te8=3h!(d'
+SECRET_KEY = config('SECRET_KEY', default='awdad')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG', default='False')
 
 ALLOWED_HOSTS = []
 
