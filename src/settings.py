@@ -42,6 +42,11 @@ CORS_ALLOWED_ORIGINS = [
     # Add other allowed origins here
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    "https://paymentgateway-riq1.onrender.com",
+]
+
+
 CORS_ALLOW_CREDENTIALS = True
 
 
