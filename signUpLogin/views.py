@@ -94,7 +94,7 @@ def signUp(request):
             return JsonResponse({'error': errors}, status=400)
     else:
         form = UserSignupForm()
-    return render(request, 'signUpLogin/signUp.html', {'form': form})
+    return render(request, 'signUpLogin/signup.html', {'form': form})
     
 
 def login(request):
