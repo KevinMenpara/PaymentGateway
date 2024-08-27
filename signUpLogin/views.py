@@ -3,6 +3,7 @@ import logging
 import random
 import uuid
 import string
+from .cipher import CustomCipher
 from django.utils.dateparse import parse_datetime
 from decouple import config
 from reportlab.lib.pagesizes import letter
@@ -172,17 +173,24 @@ def verify_code(request):
                             request.session.pop('login_data', None)
                             request.session['check_login'] = True
                             
-                            # Generate a transaction_id and amount
-                            transaction_id = uuid.UUID(request.session.get('transaction_id'))
-                            ammount = request.session.get('ammount')  # Set the amount based on your logic or session data
-                            email = request.session.get('useremail')
+                            if request.session.get('transaction_id'):
 
-                            # Construct redirect URL with transaction_id, ammount, and useremail
-                            redirect_url = reverse('payment_redirect', kwargs={'transaction_id': transaction_id, 'ammount': ammount})
-                            redirect_url_with_email = f"{redirect_url}?useremail={email}"
+                                # Generate a transaction_id and amount
+                                decrypt_transaction_id = user_cipher.decrypt(request.session.get('transaction_id'))
+                                transaction_id = uuid.UUID(decrypt_transaction_id)
+                                ammount = int(user_cipher.decrypt(request.session.get('ammount')))  # Set the amount based on your logic or session data
+                                email = user_cipher.decrypt(request.session.get('useremail'))
 
-                            return JsonResponse({'success': True, 'redirect_url': redirect_url_with_email})
+                                # Construct redirect URL with transaction_id, ammount, and useremail
+                                redirect_url = reverse('payment_redirect', kwargs={'transaction_id': transaction_id, 'ammount': ammount})
+                                redirect_url_with_email = f"{redirect_url}?useremail={email}"
 
+                                return JsonResponse({'success': True, 'redirect_url': redirect_url_with_email})
+
+                            else:
+                                redirect_url_with_email = reverse('thankYou')
+                                return JsonResponse({'success': True, 'redirect_url': redirect_url_with_email})
+                            
                         except User.DoesNotExist:
                             return JsonResponse({'error': 'User not found.'}, status=404)
                     else:
@@ -210,24 +218,36 @@ def verify_code(request):
                             pdf_file_path=pdf_file_path
                         )
                         pdf.save()
-                        
-                        # Generate a transaction_id and amount
-                        transaction_id = uuid.UUID(request.session.get('transaction_id'))
-                        ammount = request.session.get('ammount')  # Set the amount based on your logic or session data
-                        email = request.session.get('useremail')
 
-                        # Construct redirect URL with transaction_id, ammount, and useremail
-                        redirect_url = reverse('payment_redirect', kwargs={'transaction_id': transaction_id, 'ammount': ammount})
-                        redirect_url_with_email = f"{redirect_url}?useremail={signup_data['email']}"
+                        if request.session.get('transaction_id'):
 
-                        response = JsonResponse({
-                            'success': True,
-                            'pdf_url': reverse('download_pdf', kwargs={'file_path': pdf_file_path}),
-                            'redirect_url': redirect_url_with_email
-                        })
+                            cipher = CustomCipher()
+                            # Generate a transaction_id and amount
+                            decrypt_transaction_id = cipher.decrypt(request.session.get('transaction_id'))
+                            transaction_id = uuid.UUID(decrypt_transaction_id)
+                            ammount = int(cipher.decrypt(request.session.get('ammount')))  # Set the amount based on your logic or session data
+                            email = cipher.decrypt(request.session.get('useremail'))
+                            request.session['check_login'] = True
+
+                            # Construct redirect URL with transaction_id, ammount, and useremail
+                            redirect_url = reverse('payment_redirect', kwargs={'transaction_id': transaction_id, 'ammount': ammount})
+                            redirect_url_with_email = f"{redirect_url}?useremail={signup_data['email']}"
+                            response = JsonResponse({
+                                'success': True,
+                                'pdf_url': reverse('download_pdf', kwargs={'file_path': pdf_file_path}),
+                                'redirect_url': redirect_url_with_email
+                            })
+                        else :
+                           redirect_url_with_email = reverse('login')
+                           response = JsonResponse(
+                               {
+                                   'success': True,
+                                   'pdf_url': reverse('download_pdf', kwargs={'file_path': pdf_file_path}),
+                                   'redirect_url': redirect_url_with_email
+                               }
+                           ) 
                         return response
                     
-
                     except Exception as e:
                         logger.error(f"Signup data error: {str(e)}")
                         return JsonResponse({'error': 'Failed to create user. Please try again later.'}, status=500)

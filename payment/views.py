@@ -3,6 +3,7 @@ from django.urls import reverse
 from .models import Payment
 from signUpLogin.models import User
 from .forms import PaymentForm
+from .cipher import CustomCipher
 
 def payment_redirect(request, transaction_id, ammount):
     """Redirect users based on authentication status."""
@@ -55,9 +56,10 @@ def payment_redirect(request, transaction_id, ammount):
         }
         return render(request, 'payment/payment.html', context)
     else:
-        request.session['transaction_id'] = str(transaction_id)
-        request.session['ammount'] = ammount
-        request.session['useremail'] = request.GET.get('useremail')
+        cipher = CustomCipher()
+        request.session['transaction_id'] = cipher.encrypt(str(transaction_id))
+        request.session['ammount'] = cipher.encrypt(str(ammount))
+        request.session['useremail'] = cipher.encrypt(request.GET.get('useremail'))
         return redirect(reverse('login'))
 
 def payment_error(request):
