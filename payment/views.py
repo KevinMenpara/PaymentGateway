@@ -36,6 +36,9 @@ def payment_redirect(request, transaction_id, ammount):
                     user.ammount -= ammount
                     user.save()
 
+                    # Clear session storage
+                    request.session.flush()
+
                     # Redirect to the thank you page
                     return redirect(reverse('thankYou'))
                 else:
