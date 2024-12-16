@@ -1,7 +1,9 @@
 import base64
 import logging
 import random
+import uuid
 import string
+from .cipher import CustomCipher
 from django.utils.dateparse import parse_datetime
 from decouple import config
 from reportlab.lib.pagesizes import letter
@@ -169,7 +171,26 @@ def verify_code(request):
                             user = User.objects.get(id=user_id)
                             auth_login(request, user)
                             request.session.pop('login_data', None)
-                            return JsonResponse({'success': True, 'thank_you_url': reverse('thankYou')})
+                            request.session['check_login'] = True
+                            
+                            if request.session.get('transaction_id'):
+
+                                # Generate a transaction_id and amount
+                                decrypt_transaction_id = user_cipher.decrypt(request.session.get('transaction_id'))
+                                transaction_id = uuid.UUID(decrypt_transaction_id)
+                                ammount = int(user_cipher.decrypt(request.session.get('ammount')))  # Set the amount based on your logic or session data
+                                email = user_cipher.decrypt(request.session.get('useremail'))
+
+                                # Construct redirect URL with transaction_id, ammount, and useremail
+                                redirect_url = reverse('payment_redirect', kwargs={'transaction_id': transaction_id, 'ammount': ammount})
+                                redirect_url_with_email = f"{redirect_url}?useremail={email}"
+
+                                return JsonResponse({'success': True, 'redirect_url': redirect_url_with_email})
+
+                            else:
+                                redirect_url_with_email = reverse('thankYou')
+                                return JsonResponse({'success': True, 'redirect_url': redirect_url_with_email})
+                            
                         except User.DoesNotExist:
                             return JsonResponse({'error': 'User not found.'}, status=404)
                     else:
@@ -197,12 +218,36 @@ def verify_code(request):
                             pdf_file_path=pdf_file_path
                         )
                         pdf.save()
-                        
 
-                        # Redirect to the PDF download URL with a flag for redirection to thank you page
-                        response = JsonResponse({'success': True, 'pdf_url': reverse('download_pdf', kwargs={'file_path': pdf_file_path}), 'thank_you_url': reverse('thankYou')})
+                        if request.session.get('transaction_id'):
+
+                            cipher = CustomCipher()
+                            # Generate a transaction_id and amount
+                            decrypt_transaction_id = cipher.decrypt(request.session.get('transaction_id'))
+                            transaction_id = uuid.UUID(decrypt_transaction_id)
+                            ammount = int(cipher.decrypt(request.session.get('ammount')))  # Set the amount based on your logic or session data
+                            email = cipher.decrypt(request.session.get('useremail'))
+                            request.session['check_login'] = True
+
+                            # Construct redirect URL with transaction_id, ammount, and useremail
+                            redirect_url = reverse('payment_redirect', kwargs={'transaction_id': transaction_id, 'ammount': ammount})
+                            redirect_url_with_email = f"{redirect_url}?useremail={signup_data['email']}"
+                            response = JsonResponse({
+                                'success': True,
+                                'pdf_url': reverse('download_pdf', kwargs={'file_path': pdf_file_path}),
+                                'redirect_url': redirect_url_with_email
+                            })
+                        else :
+                           redirect_url_with_email = reverse('login')
+                           response = JsonResponse(
+                               {
+                                   'success': True,
+                                   'pdf_url': reverse('download_pdf', kwargs={'file_path': pdf_file_path}),
+                                   'redirect_url': redirect_url_with_email
+                               }
+                           ) 
                         return response
-
+                    
                     except Exception as e:
                         logger.error(f"Signup data error: {str(e)}")
                         return JsonResponse({'error': 'Failed to create user. Please try again later.'}, status=500)

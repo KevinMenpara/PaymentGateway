@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'signUpLogin.apps.SignuploginConfig',
+    'payment.apps.PaymentConfig',
 ]
 
 MIDDLEWARE = [
@@ -64,7 +65,7 @@ ROOT_URLCONF = 'src.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'signUpLogin', 'templates')],
+        'DIRS': [os.path.join(BASE_DIR, 'signUpLogin', 'templates'), os.path.join(BASE_DIR, 'payment', 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
